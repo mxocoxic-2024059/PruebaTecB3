@@ -1,3 +1,5 @@
+import { clearStoredSession, getStoredToken } from '../utils/session.js';
+
 const DEFAULT_CONNECTION_MESSAGE = 'No fue posible conectar con el servicio.';
 
 export class ApiError extends Error {
@@ -27,7 +29,7 @@ export async function apiRequest(baseUrl, path, options = {}) {
   if (body !== undefined) requestHeaders['Content-Type'] = 'application/json';
 
   if (protectedRequest) {
-    const token = sessionStorage.getItem('taskflow_token');
+    const token = getStoredToken();
     if (token) requestHeaders.Authorization = `Bearer ${token}`;
   }
 
@@ -49,7 +51,10 @@ export async function apiRequest(baseUrl, path, options = {}) {
     const error = new ApiError(message, response.status, data?.details || null);
 
     if (protectedRequest && response.status === 401) {
-      window.dispatchEvent(new CustomEvent('taskflow:unauthorized'));
+      clearStoredSession();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('taskflow:unauthorized'));
+      }
     }
 
     throw error;

@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { getInitialTheme, persistTheme } from '../utils/theme';
 
 const ThemeContext = createContext(null);
 
 function initialTheme() {
-  const stored = localStorage.getItem('taskflow_theme');
-  if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return getInitialTheme(
+    localStorage,
+    window.matchMedia('(prefers-color-scheme: dark)').matches,
+  );
 }
 
 export function ThemeProvider({ children }) {
@@ -13,7 +15,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('taskflow_theme', theme);
+    persistTheme(theme, localStorage);
   }, [theme]);
 
   const value = useMemo(() => ({

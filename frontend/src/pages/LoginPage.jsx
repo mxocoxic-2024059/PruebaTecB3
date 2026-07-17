@@ -61,7 +61,7 @@ export default function LoginPage() {
       footerLink="/register"
       footerLabel="Crear cuenta"
     >
-      {notice && <div className="notice notice--success" role="status">{notice}</div>}
+      {notice && <div className="notice notice--success" role="status" aria-live="polite">{notice}</div>}
       {generalError && <div className="notice notice--error" role="alert" aria-live="assertive">{generalError}</div>}
       <form className="form-stack" onSubmit={handleSubmit} noValidate>
         <div className="form-field">

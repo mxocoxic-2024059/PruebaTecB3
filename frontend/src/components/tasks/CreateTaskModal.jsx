@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, Check, X } from 'lucide-react';
 import { createTask } from '../../api/tasksApi';
 import { ApiError } from '../../api/httpClient';
+import { useTaskData } from '../../context/TaskDataContext';
+import { buildTaskPayload } from '../../utils/taskPayload';
+import { runTaskMutation } from '../../utils/taskRefresh';
 
 const initialForm = {
   titulo: '',
@@ -12,15 +15,26 @@ const initialForm = {
 };
 
 export default function CreateTaskModal({ open, onClose, onCreated }) {
+  const { refreshAll } = useTaskData();
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const titleInputRef = useRef(null);
+  const openerRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
+    openerRef.current = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    titleInputRef.current?.focus();
     const handleEscape = (event) => { if (event.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = previousOverflow;
+      openerRef.current?.focus();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -41,17 +55,10 @@ export default function CreateTaskModal({ open, onClose, onCreated }) {
     setLoading(true);
     setError('');
     try {
-      const payload = {
-        titulo: form.titulo.trim(),
-        descripcion: form.descripcion.trim(),
-        prioridad: form.prioridad,
-        estado: form.estado,
-      };
-      if (form.fecha) payload.fecha = form.fecha;
-
-      const task = await createTask(payload);
+      const payload = buildTaskPayload(form);
+      const { result: task } = await runTaskMutation(() => createTask(payload), refreshAll);
       setForm(initialForm);
-      await onCreated(task);
+      onCreated?.(task);
       onClose();
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'No fue posible crear la tarea.');
@@ -71,7 +78,7 @@ export default function CreateTaskModal({ open, onClose, onCreated }) {
         <form className="task-form" onSubmit={handleSubmit}>
           <div className="form-field form-field--full">
             <label htmlFor="task-title">Título</label>
-            <input id="task-title" name="titulo" autoFocus maxLength="160" placeholder="Ej. Preparar informe semanal" value={form.titulo} onChange={updateField} />
+            <input ref={titleInputRef} id="task-title" name="titulo" maxLength="160" placeholder="Ej. Preparar informe semanal" value={form.titulo} onChange={updateField} />
           </div>
           <div className="form-field form-field--full">
             <label htmlFor="task-description">Descripción <span>(opcional)</span></label>
