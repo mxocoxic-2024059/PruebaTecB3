@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   calculateDashboard,
   fetchTasks,
+  InvalidTasksTokenError,
   TasksUnavailableError,
 } = require('../src/services/dashboard.service');
 
@@ -66,6 +67,33 @@ test('normaliza como indisponibilidad cuando Tasks no responde', async () => {
   const unavailableFetch = async () => { throw new Error('network down'); };
   await assert.rejects(
     fetchTasks('http://localhost:4002', 'Bearer token-redacted', unavailableFetch),
+    TasksUnavailableError,
+  );
+});
+
+test('propaga como token invÃ¡lido el rechazo de Tasks', async () => {
+  const unauthorizedFetch = async () => ({ ok: false, status: 401 });
+  await assert.rejects(
+    fetchTasks('http://localhost:4002', 'Bearer token-redacted', unauthorizedFetch),
+    InvalidTasksTokenError,
+  );
+});
+
+test('normaliza una respuesta de Tasks que no es una lista', async () => {
+  const invalidResponseFetch = async () => ({ ok: true, status: 200, json: async () => ({ data: [] }) });
+  await assert.rejects(
+    fetchTasks('http://localhost:4002', 'Bearer token-redacted', invalidResponseFetch),
+    TasksUnavailableError,
+  );
+});
+
+test('cancela la consulta a Tasks cuando supera el tiempo mÃ¡ximo', async () => {
+  const slowFetch = async (_url, options) => new Promise((_resolve, reject) => {
+    options.signal.addEventListener('abort', () => reject(new Error('aborted')));
+  });
+
+  await assert.rejects(
+    fetchTasks('http://localhost:4002', 'Bearer token-redacted', slowFetch, 5),
     TasksUnavailableError,
   );
 });

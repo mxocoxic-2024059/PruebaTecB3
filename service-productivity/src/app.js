@@ -20,7 +20,9 @@ app.get('/health', (_req, res) => {
 
 app.get('/dashboard', authMiddleware, async (req, res) => {
   try {
-    const data = await getDashboard(environment.tasksServiceUrl, req.headers.authorization);
+    const data = await getDashboard(environment.tasksServiceUrl, req.headers.authorization, {
+      timeoutMs: environment.tasksRequestTimeoutMs,
+    });
     return res.status(200).json({ success: true, data });
   } catch (error) {
     if (error instanceof InvalidTasksTokenError) {

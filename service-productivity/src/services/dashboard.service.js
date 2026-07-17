@@ -31,15 +31,20 @@ function calculateDashboard(tasks, now = new Date()) {
   };
 }
 
-async function fetchTasks(tasksServiceUrl, authorization, fetchImpl = fetch) {
+async function fetchTasks(tasksServiceUrl, authorization, fetchImpl = fetch, timeoutMs = 5000) {
   let response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     response = await fetchImpl(`${tasksServiceUrl}/tasks`, {
       headers: { Authorization: authorization },
+      signal: controller.signal,
     });
   } catch {
     throw new TasksUnavailableError();
+  } finally {
+    clearTimeout(timeout);
   }
 
   if (response.status === 401) {
@@ -60,7 +65,12 @@ async function fetchTasks(tasksServiceUrl, authorization, fetchImpl = fetch) {
 }
 
 async function getDashboard(tasksServiceUrl, authorization, options = {}) {
-  const tasks = await fetchTasks(tasksServiceUrl, authorization, options.fetchImpl);
+  const tasks = await fetchTasks(
+    tasksServiceUrl,
+    authorization,
+    options.fetchImpl,
+    options.timeoutMs,
+  );
   return calculateDashboard(tasks, options.now);
 }
 
