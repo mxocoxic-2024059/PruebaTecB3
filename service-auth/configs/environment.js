@@ -12,9 +12,7 @@ const environment = {
 };
 
 if (!environment.jwtSecret) {
-  console.warn(
-    '[service-auth] JWT_SECRET no esta definido en el .env. Configuralo antes de usar en produccion.'
-  );
+  throw new Error('[service-auth] JWT_SECRET es obligatorio para iniciar el servicio.');
 }
 
 module.exports = environment;

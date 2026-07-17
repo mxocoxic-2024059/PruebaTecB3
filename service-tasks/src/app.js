@@ -5,10 +5,18 @@ const connectDB = require('./config/db');
 const taskRoutes = require('./routes/task.routes');
 
 const app = express();
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 4002;
+const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+if (!process.env.JWT_SECRET) {
+  throw new Error('[service-tasks] JWT_SECRET es obligatorio para iniciar el servicio.');
+}
 
 // Middlewares
-app.use(cors());
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
 // Conectar a MongoDB

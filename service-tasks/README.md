@@ -1,76 +1,70 @@
-# Servicio A - Gestión de Tareas
+# service-tasks
 
-Microservicio para la gestión de tareas en un sistema basado en arquitectura de microservicios. Este servicio permite crear y consultar tareas, protegido mediante autenticación JWT.
+Servicio de gestión de tareas de TaskFlow. La implementación actual permite crear tareas y listar las tareas del usuario autenticado. No implementa todavía actualización ni eliminación.
 
-## Características
+## Requisitos y configuración
 
-- CRUD de tareas (Crear y Leer)
-- Autenticación mediante JWT
-- Filtrado de tareas por usuario
-- Conexión a MongoDB con Mongoose
-- Validación de datos de entrada
+- Node.js 22
+- pnpm 9.1.0 desde el workspace raíz
+- MongoDB
+- Un JWT emitido por `service-auth`
 
-## Instalación
+Crear el archivo local de configuración:
 
-```bash
-pnpm install
+```powershell
+Copy-Item .env.example .env
 ```
 
-## Configuración de Variables de Entorno
+Variables:
 
-Crea un archivo `.env` basándote en `.env.example`:
+| Variable | Uso |
+| --- | --- |
+| `PORT` | Puerto del servicio; predeterminado 4002 |
+| `MONGODB_URI` | Conexión independiente de MongoDB |
+| `JWT_SECRET` | Secreto compartido obligatorio |
+| `CORS_ORIGIN` | Uno o varios orígenes permitidos, separados por coma |
 
-```env
-PORT=4001
-MONGODB_URI=mongodb://localhost:27017/tasks
-JWT_SECRET=tu_secreto_compartido
+El servicio falla al iniciar si `JWT_SECRET` no está configurado. El `.env` local no debe añadirse a Git.
+
+## Ejecución
+
+Desde la raíz:
+
+```powershell
+pnpm dev:tasks
 ```
 
-**IMPORTANTE:** El valor de `JWT_SECRET` debe ser **idéntico** al utilizado por el Servicio de Autenticación. Ambos servicios deben usar la misma clave secreta para que la verificación de tokens funcione correctamente.
+Desde esta carpeta también pueden ejecutarse `pnpm dev` o `pnpm start`.
 
-## Cómo Ejecutar
+## Autenticación
 
-**Desarrollo:**
-```bash
-pnpm dev
+Todas las rutas de tareas requieren:
+
+```text
+Authorization: Bearer <token>
 ```
 
-**Producción:**
-```bash
-pnpm start
-```
+El token debe estar firmado con HS256 y contener un `sub` que sea un ObjectId válido. Tasks normaliza el usuario autenticado como `req.user` y nunca acepta `usuarioId` desde el body.
 
-## Endpoints
+## Endpoints actuales
 
-### Público
+### `GET /health`
 
-#### GET /health
-Verifica el estado del servicio.
+Ruta pública:
 
-**Respuesta:**
 ```json
 {
   "status": "ok"
 }
 ```
 
-### Protegidos (requieren JWT)
+### `POST /tasks`
 
-Todos los endpoints protegidos requieren el header `Authorization` con formato `Bearer <token>`.
+Crea una tarea del usuario autenticado.
 
-#### POST /tasks
-Crea una nueva tarea asociada al usuario autenticado.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Body:**
 ```json
 {
-  "titulo": "Título de la tarea",
+  "titulo": "Preparar informe",
   "descripcion": "Descripción opcional",
   "prioridad": "alta",
   "estado": "pendiente",
@@ -78,85 +72,35 @@ Content-Type: application/json
 }
 ```
 
-**Campos:**
-- `titulo` (String, requerido): Título de la tarea
-- `descripcion` (String, opcional): Descripción detallada
-- `prioridad` (String, opcional): "baja", "media", "alta" (default: "media")
-- `estado` (String, opcional): "pendiente", "en_progreso", "completada" (default: "pendiente")
-- `fecha` (Date, opcional): Fecha límite de la tarea
+Campos:
 
-**Respuesta (201):**
+- `titulo`: requerido.
+- `descripcion`: opcional.
+- `prioridad`: `baja`, `media` o `alta`; predeterminado `media`.
+- `estado`: `pendiente`, `en_progreso` o `completada`; predeterminado `pendiente`.
+- `fecha`: fecha opcional.
+- `usuarioId`: asignado exclusivamente desde el claim JWT `sub`.
+
+Responde 201 con la tarea creada.
+
+### `GET /tasks`
+
+Lista únicamente las tareas cuyo `usuarioId` coincide con el claim `sub` del usuario autenticado. Responde 200 con un array.
+
+## Errores de autenticación
+
+Token ausente:
+
 ```json
 {
-  "_id": "id_generado",
-  "titulo": "Título de la tarea",
-  "descripcion": "Descripción opcional",
-  "prioridad": "alta",
-  "estado": "pendiente",
-  "fecha": "2026-12-31T00:00:00.000Z",
-  "usuarioId": "id_usuario_autenticado",
-  "createdAt": "2026-07-17T15:00:00.000Z",
-  "updatedAt": "2026-07-17T15:00:00.000Z"
+  "mensaje": "Token no proporcionado"
 }
 ```
 
-#### GET /tasks
-Obtiene todas las tareas del usuario autenticado.
+Token inválido, expirado o sin `sub` válido:
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Respuesta (200):**
 ```json
-[
-  {
-    "_id": "id_generado",
-    "titulo": "Título de la tarea",
-    "descripcion": "Descripción opcional",
-    "prioridad": "alta",
-    "estado": "pendiente",
-    "fecha": "2026-12-31T00:00:00.000Z",
-    "usuarioId": "id_usuario_autenticado",
-    "createdAt": "2026-07-17T15:00:00.000Z",
-    "updatedAt": "2026-07-17T15:00:00.000Z"
-  }
-]
+{
+  "mensaje": "Token inválido o expirado"
+}
 ```
-
-## Estructura del Proyecto
-
-```
-service-tasks/
-├── src/
-│   ├── config/
-│   │   └── db.js           # Conexión a MongoDB
-│   ├── models/
-│   │   └── Task.js         # Modelo de datos Tarea
-│   ├── controllers/
-│   │   └── task.controller.js  # Lógica de negocio
-│   ├── routes/
-│   │   └── task.routes.js  # Definición de rutas
-│   ├── middlewares/
-│   │   └── auth.middleware.js  # Middleware de autenticación JWT
-│   └── app.js              # Punto de entrada de la aplicación
-├── .env.example            # Plantilla de variables de entorno
-├── package.json            # Dependencias y scripts
-└── pnpm-lock.yaml          # Lockfile de pnpm
-```
-
-## Dependencias
-
-- **express**: Framework web
-- **mongoose**: ODM para MongoDB
-- **dotenv**: Gestión de variables de entorno
-- **cors**: Middleware CORS
-- **jsonwebtoken**: Gestión de tokens JWT
-- **nodemon** (dev): Recarga automática en desarrollo
-
-## Notas
-
-- El servicio corre por defecto en el puerto 4001, configurable vía variable de entorno `PORT`
-- La conexión a MongoDB es obligatoria para el funcionamiento del servicio
-- Los tokens JWT deben ser generados por el Servicio de Autenticación usando la misma `JWT_SECRET`
