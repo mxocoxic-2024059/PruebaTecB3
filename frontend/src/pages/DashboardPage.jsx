@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, CircleDot, Clock3, ListTodo, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getDashboard } from '../api/productivityApi';
-import { getTasks } from '../api/tasksApi';
-import { ApiError } from '../api/httpClient';
 import { useAuth } from '../context/AuthContext';
+import { useTaskData } from '../context/TaskDataContext';
 import MetricCard from '../components/dashboard/MetricCard';
 import ProgressRing from '../components/dashboard/ProgressRing';
 import TaskCard from '../components/tasks/TaskCard';
@@ -14,32 +12,22 @@ import { sortUpcomingTasks } from '../utils/tasks';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [metrics, setMetrics] = useState(null);
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const {
+    metrics,
+    tasks,
+    dashboardLoading,
+    tasksLoading,
+    dashboardError,
+    tasksError,
+    refreshAll,
+  } = useTaskData();
   const [modalOpen, setModalOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const loading = dashboardLoading || tasksLoading;
+  const error = dashboardError || tasksError;
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [dashboardResponse, tasksResponse] = await Promise.all([getDashboard(), getTasks()]);
-      setMetrics(dashboardResponse.data);
-      setTasks(tasksResponse);
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'No fue posible conectar con el servicio.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { loadDashboard(); }, [loadDashboard]);
-
-  async function handleCreated() {
+  function handleCreated() {
     setAnnouncement('Tarea creada correctamente.');
-    await loadDashboard();
   }
 
   const upcomingTasks = sortUpcomingTasks(tasks).slice(0, 4);
@@ -53,7 +41,7 @@ export default function DashboardPage() {
       <div className="sr-only" aria-live="polite">{announcement}</div>
 
       {loading && <LoadingState cards={6} />}
-      {!loading && error && <ErrorState message={error} onRetry={loadDashboard} />}
+      {!loading && error && <ErrorState message={error} onRetry={refreshAll} />}
       {!loading && !error && metrics?.total === 0 && <EmptyTasksState onCreate={() => setModalOpen(true)} />}
       {!loading && !error && metrics?.total > 0 && (
         <>

@@ -1,6 +1,6 @@
-import { apiRequest, ApiError } from './httpClient';
+import { apiRequest, ApiError } from './httpClient.js';
 
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:4001';
+const AUTH_API_URL = import.meta.env?.VITE_AUTH_API_URL || 'http://localhost:4001';
 
 export async function login(credentials) {
   try {

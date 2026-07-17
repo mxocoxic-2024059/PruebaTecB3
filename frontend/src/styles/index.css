@@ -117,7 +117,7 @@ button, a, input, textarea, select { outline: none; }
 .password-field input { padding-right: 50px; }
 .password-field button { position: absolute; top: 1px; right: 1px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; }
 
-.auth-page { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 34px 18px; overflow: hidden; background: radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 10%, transparent), transparent 34%), var(--background); }
+.auth-page { position: relative; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 34px 18px; overflow-x: hidden; overflow-y: auto; background: radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 10%, transparent), transparent 34%), var(--background); }
 .auth-page__ambient { position: absolute; width: 340px; height: 340px; border-radius: 50%; filter: blur(90px); opacity: .18; pointer-events: none; }
 .auth-page__ambient--one { top: -170px; left: -100px; background: var(--primary); }
 .auth-page__ambient--two { right: -180px; bottom: -160px; background: var(--blue); }
@@ -281,7 +281,7 @@ a.nav-item:hover { text-decoration: none; background: var(--surface-secondary); 
   .skeleton-grid { grid-template-columns: 1fr 1fr; }
   .filter-bar { align-items: flex-start; flex-direction: column; gap: 6px; margin-inline: -16px; padding-inline: 16px; border-inline: 0; border-radius: 0; }
   .filter-tabs { width: max-content; }
-  .auth-page { padding-top: 76px; }
+  .auth-page { place-items: start center; padding-top: 76px; padding-bottom: 32px; }
   .auth-card { border-radius: 19px; }
 }
 

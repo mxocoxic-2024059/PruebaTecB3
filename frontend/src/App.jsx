@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PrivateLayout from './components/layout/PrivateLayout';
+import { TaskDataProvider } from './context/TaskDataContext';
 
 export default function App() {
   return (
@@ -16,7 +17,7 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
       <Route element={<ProtectedRoute />}>
-        <Route element={<PrivateLayout />}>
+        <Route element={<TaskDataProvider><PrivateLayout /></TaskDataProvider>}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/tasks" element={<TasksPage />} />
         </Route>

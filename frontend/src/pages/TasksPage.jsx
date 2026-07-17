@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ListFilter, Plus } from 'lucide-react';
-import { getTasks } from '../api/tasksApi';
-import { ApiError } from '../api/httpClient';
 import TaskCard from '../components/tasks/TaskCard';
 import CreateTaskModal from '../components/tasks/CreateTaskModal';
 import { EmptyTasksState, ErrorState, LoadingState } from '../components/ui/PageState';
 import { filterTasks } from '../utils/tasks';
+import { useTaskData } from '../context/TaskDataContext';
 
 const filters = [
   ['todas', 'Todas'],
@@ -16,31 +15,14 @@ const filters = [
 ];
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState([]);
+  const { tasks, tasksLoading: loading, tasksError: error, refreshTasks } = useTaskData();
   const [activeFilter, setActiveFilter] = useState('todas');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-
-  const loadTasks = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      setTasks(await getTasks());
-    } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'No fue posible conectar con el servicio.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { loadTasks(); }, [loadTasks]);
   const visibleTasks = useMemo(() => filterTasks(tasks, activeFilter), [tasks, activeFilter]);
 
-  async function handleCreated() {
+  function handleCreated() {
     setAnnouncement('Tarea creada correctamente.');
-    await loadTasks();
   }
 
   return (
@@ -61,7 +43,7 @@ export default function TasksPage() {
       )}
 
       {loading && <LoadingState cards={5} />}
-      {!loading && error && <ErrorState message={error} onRetry={loadTasks} />}
+      {!loading && error && <ErrorState message={error} onRetry={refreshTasks} />}
       {!loading && !error && tasks.length === 0 && <EmptyTasksState onCreate={() => setModalOpen(true)} />}
       {!loading && !error && tasks.length > 0 && visibleTasks.length === 0 && <section className="page-state page-state--small"><h2>No hay tareas en este filtro.</h2><p>Prueba con otra categoría.</p></section>}
       {!loading && !error && visibleTasks.length > 0 && <section className="task-list" aria-label="Lista de tareas">{visibleTasks.map((task) => <TaskCard task={task} key={task._id} />)}</section>}

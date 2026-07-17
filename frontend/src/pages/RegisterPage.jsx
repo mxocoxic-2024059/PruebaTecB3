@@ -64,26 +64,26 @@ export default function RegisterPage() {
       <form className="form-stack" onSubmit={handleSubmit} noValidate>
         <div className="form-field">
           <label htmlFor="register-nombre">Nombre completo</label>
-          <input id="register-nombre" name="nombre" autoComplete="name" placeholder="Juan Pérez" value={form.nombre} onChange={updateField} aria-invalid={Boolean(errors.nombre)} />
-          {errors.nombre && <span className="field-error">{errors.nombre}</span>}
+          <input id="register-nombre" name="nombre" autoComplete="name" placeholder="Juan Pérez" value={form.nombre} onChange={updateField} aria-invalid={Boolean(errors.nombre)} aria-describedby={errors.nombre ? 'register-nombre-error' : undefined} />
+          {errors.nombre && <span id="register-nombre-error" className="field-error">{errors.nombre}</span>}
         </div>
         <div className="form-field">
           <label htmlFor="register-correo">Correo electrónico</label>
-          <input id="register-correo" name="correo" type="email" autoComplete="email" placeholder="juan@correo.com" value={form.correo} onChange={updateField} aria-invalid={Boolean(errors.correo)} />
-          {errors.correo && <span className="field-error">{errors.correo}</span>}
+          <input id="register-correo" name="correo" type="email" autoComplete="email" placeholder="juan@correo.com" value={form.correo} onChange={updateField} aria-invalid={Boolean(errors.correo)} aria-describedby={errors.correo ? 'register-correo-error' : undefined} />
+          {errors.correo && <span id="register-correo-error" className="field-error">{errors.correo}</span>}
         </div>
         <div className="form-field">
           <label htmlFor="register-contrasena">Contraseña</label>
           <div className="password-field">
-            <input id="register-contrasena" name="contrasena" type={showPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Mínimo 8 caracteres" value={form.contrasena} onChange={updateField} aria-invalid={Boolean(errors.contrasena)} />
+            <input id="register-contrasena" name="contrasena" type={showPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Mínimo 8 caracteres" value={form.contrasena} onChange={updateField} aria-invalid={Boolean(errors.contrasena)} aria-describedby={errors.contrasena ? 'register-contrasena-error' : undefined} />
             <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button>
           </div>
-          {errors.contrasena && <span className="field-error">{errors.contrasena}</span>}
+          {errors.contrasena && <span id="register-contrasena-error" className="field-error">{errors.contrasena}</span>}
         </div>
         <div className="form-field">
           <label htmlFor="register-confirmar">Confirmar contraseña</label>
-          <input id="register-confirmar" name="confirmar" type={showPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Repite tu contraseña" value={form.confirmar} onChange={updateField} aria-invalid={Boolean(errors.confirmar)} />
-          {errors.confirmar && <span className="field-error">{errors.confirmar}</span>}
+          <input id="register-confirmar" name="confirmar" type={showPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Repite tu contraseña" value={form.confirmar} onChange={updateField} aria-invalid={Boolean(errors.confirmar)} aria-describedby={errors.confirmar ? 'register-confirmar-error' : undefined} />
+          {errors.confirmar && <span id="register-confirmar-error" className="field-error">{errors.confirmar}</span>}
         </div>
         <button className="button button--primary button--wide" type="submit" disabled={loading}>
           <UserPlus size={19} /> {loading ? 'Creando cuenta…' : 'Crear cuenta'}
