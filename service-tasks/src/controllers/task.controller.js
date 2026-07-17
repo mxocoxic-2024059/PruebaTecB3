@@ -28,7 +28,7 @@ const createTask = async (req, res) => {
       prioridad,
       estado,
       fecha,
-      usuarioId: req.usuario.userId
+      usuarioId: req.user.id
     });
 
     await nuevaTarea.save();
@@ -42,7 +42,7 @@ const createTask = async (req, res) => {
 
 const getTasks = async (req, res) => {
   try {
-    const tareas = await Task.find({ usuarioId: req.usuario.userId });
+    const tareas = await Task.find({ usuarioId: req.user.id });
     res.status(200).json(tareas);
   } catch (error) {
     console.error('Error al obtener tareas:', error);

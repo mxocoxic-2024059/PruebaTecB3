@@ -1,0 +1,21 @@
+{
+  "name": "taskflow",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.1.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9 <10"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --stream --if-present run dev",
+    "dev:auth": "pnpm --filter service-auth run dev",
+    "dev:tasks": "pnpm --filter service-tasks run dev",
+    "dev:productivity": "pnpm --filter ./service-productivity --if-present run dev",
+    "dev:frontend": "pnpm --filter ./frontend --if-present run dev",
+    "build": "pnpm -r --if-present run build",
+    "lint": "pnpm -r --if-present run lint",
+    "test": "pnpm -r --if-present run test"
+  }
+}
+

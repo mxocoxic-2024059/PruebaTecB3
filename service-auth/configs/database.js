@@ -5,7 +5,8 @@ async function connectDatabase() {
   try {
     mongoose.set('strictQuery', true);
     await mongoose.connect(environment.mongoUri);
-    console.log(`[service-auth] Conectado a MongoDB -> ${environment.mongoUri}`);
+    const databaseName = mongoose.connection.name || 'desconocida';
+    console.log(`[service-auth] Conectado a MongoDB (base: ${databaseName})`);
   } catch (error) {
     console.error('[service-auth] Error al conectar con MongoDB:', error.message);
     process.exit(1);

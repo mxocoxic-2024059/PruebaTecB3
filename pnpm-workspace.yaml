@@ -1,0 +1,6 @@
+packages:
+  - service-auth
+  - service-tasks
+  - service-productivity
+  - frontend
+

@@ -1,92 +1,68 @@
 # service-auth
 
-Servicio de Autenticación del **Sistema de gestión de tareas** (Sprint 1).
-Responsable exclusivo del registro de usuarios, inicio de sesión, protección de
-contraseñas con Argon2 y emisión de JWT que consumirán el Frontend, el Servicio
-de Tareas (Servicio A) y el Servicio de Productividad (Servicio B).
+Servicio de autenticación de TaskFlow. Gestiona el registro, inicio de sesión, protección de contraseñas con Argon2id y emisión de JWT para los demás componentes.
 
-## Requisitos previos
+## Requisitos y configuración
 
-- Node.js 18+
-- pnpm 9+ (`npm install -g pnpm` una sola vez, o `corepack enable`)
-- MongoDB corriendo localmente o una URI remota (ej. MongoDB Atlas)
+- Node.js 22
+- pnpm 9.1.0 desde el workspace raíz
+- MongoDB
 
-## Instalación
+Crear el archivo local de configuración:
 
-```bash
-cd service-auth
-pnpm install
+```powershell
+Copy-Item .env.example .env
 ```
 
-## Configuración
+Variables disponibles:
 
-1. Copiar el archivo de ejemplo y completar los valores:
+| Variable | Uso |
+| --- | --- |
+| `PORT` | Puerto del servicio; predeterminado 4001 |
+| `NODE_ENV` | `development`, `production` o `test` |
+| `MONGO_URI` | Conexión independiente de MongoDB |
+| `JWT_SECRET` | Secreto compartido obligatorio |
+| `JWT_EXPIRES_IN` | Expiración del token; predeterminado `1h` |
+| `CORS_ORIGIN` | Uno o varios orígenes separados por coma |
 
-```bash
-cp .env.example .env
-```
-
-2. Variables disponibles:
-
-| Variable       | Descripción                                         |
-|----------------|------------------------------------------------------|
-| `PORT`         | Puerto donde corre el servicio (por defecto 4001)    |
-| `NODE_ENV`     | `development` \| `production` \| `test`              |
-| `MONGO_URI`    | Cadena de conexión a MongoDB                          |
-| `JWT_SECRET`   | Secreto para firmar los JWT                           |
-| `JWT_EXPIRES_IN` | Tiempo de expiración del token (ej. `1h`, `15m`)   |
-| `CORS_ORIGIN`  | Origen(es) permitidos, separados por coma             |
+El servicio falla al iniciar si `JWT_SECRET` no está configurado. El `.env` local no debe añadirse a Git.
 
 ## Ejecución
 
-```bash
-# modo desarrollo (con recarga automática)
-pnpm dev
+Desde la raíz:
 
-# modo producción
-pnpm start
+```powershell
+pnpm dev:auth
 ```
 
-El servicio queda disponible en `http://localhost:PORT`.
+Desde esta carpeta también pueden ejecutarse `pnpm dev` o `pnpm start`.
 
 ## Endpoints
 
 ### `GET /health`
-Verifica que el servicio esté activo.
+
+```json
+{
+  "success": true,
+  "service": "service-auth",
+  "status": "up"
+}
+```
 
 ### `POST /auth/register`
-Registra un nuevo usuario.
 
-**Body:**
 ```json
 {
-  "nombre": "Ana Perez",
+  "nombre": "Ana Pérez",
   "correo": "ana@example.com",
   "contrasena": "MiClaveSegura123"
 }
 ```
 
-**Respuesta 201:**
-```json
-{
-  "success": true,
-  "message": "Usuario registrado correctamente",
-  "data": {
-    "user": {
-      "_id": "...",
-      "nombre": "Ana Perez",
-      "correo": "ana@example.com",
-      "createdAt": "...",
-      "updatedAt": "..."
-    }
-  }
-}
-```
+Responde 201 con `data.user`. El registro no emite token.
 
 ### `POST /auth/login`
-Autentica a un usuario y retorna un JWT válido.
 
-**Body:**
 ```json
 {
   "correo": "ana@example.com",
@@ -94,103 +70,49 @@ Autentica a un usuario y retorna un JWT válido.
 }
 ```
 
-**Respuesta 200:**
-```json
-{
-  "success": true,
-  "message": "Inicio de sesion exitoso",
-  "data": {
-    "user": { "_id": "...", "nombre": "Ana Perez", "correo": "ana@example.com" },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
+Responde 200 con `data.user` y `data.token`.
 
-## Contrato técnico del JWT (para Frontend, Servicio A y Servicio B)
+## Contrato JWT
 
-- **Header a enviar:** `Authorization: Bearer <token>`
-- **Algoritmo de firma:** HS256 (`jsonwebtoken`, secreto compartido `JWT_SECRET`)
-- **Payload del token:**
+Auth es la fuente oficial del contrato:
 
 ```json
 {
-  "sub": "<id del usuario en MongoDB>",
-  "correo": "usuario@example.com",
-  "nombre": "Nombre del usuario",
+  "sub": "<ObjectId del usuario>",
+  "correo": "<correo>",
+  "nombre": "<nombre>",
   "iat": 1234567890,
   "exp": 1234571490
 }
 ```
 
-- Los servicios protegidos (Servicio A y Servicio B) deben **verificar el
-  token con el mismo `JWT_SECRET`** configurado en este servicio antes de
-  procesar cualquier solicitud a rutas protegidas.
-- Si el token es inválido o expiró, el servicio consumidor debe responder
-  `401 Unauthorized`.
-- El campo `sub` identifica al usuario dueño de las tareas/indicadores y debe
-  usarse para filtrar la información por usuario en los demás servicios.
+- Header: `Authorization: Bearer <token>`
+- Firma: HS256
+- Propietario: claim `sub`
+- Expiración: `JWT_EXPIRES_IN`
 
-## Manejo de errores
+## Estructura real
 
-Todas las respuestas de error siguen el mismo formato:
-
-```json
-{
-  "success": false,
-  "message": "Descripción del error",
-  "details": null
-}
-```
-
-Códigos utilizados: `400` (validación), `401` (credenciales inválidas o token
-inválido), `404` (ruta no encontrada), `409` (correo duplicado), `500` (error
-interno).
-
-## Estructura del proyecto
-
-```
+```text
 service-auth/
+├── configs/
+│   ├── database.js
+│   └── environment.js
+├── middlewares/
+│   ├── error.middleware.js
+│   └── not-found.middleware.js
 ├── src/
-│   ├── config/
-│   │   ├── environment.js
-│   │   └── database.js
-│   ├── controllers/
-│   │   └── auth.controller.js
-│   ├── models/
-│   │   └── user.model.js
-│   ├── routes/
-│   │   └── auth.routes.js
-│   ├── services/
+│   ├── auth/
+│   │   ├── auth.controller.js
+│   │   ├── auth.routes.js
 │   │   ├── auth.service.js
+│   │   ├── auth.validation.js
 │   │   ├── password.service.js
-│   │   └── token.service.js
-│   ├── validations/
-│   │   └── auth.validation.js
-│   ├── middlewares/
-│   │   ├── error.middleware.js
-│   │   └── not-found.middleware.js
+│   │   ├── token.service.js
+│   │   └── user.model.js
 │   ├── utils/
-│   │   ├── api-response.js
-│   │   └── app-error.js
 │   ├── app.js
-│   └── server.js
-├── .env
+│   └── index.js
 ├── .env.example
-├── .gitignore
-├── package.json
-└── README.md
-```
-
-## Pruebas manuales sugeridas
-
-Con el servidor corriendo, probar con `curl` o Postman:
-
-```bash
-curl -X POST http://localhost:4001/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"nombre":"Ana Perez","correo":"ana@example.com","contrasena":"MiClaveSegura123"}'
-
-curl -X POST http://localhost:4001/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"correo":"ana@example.com","contrasena":"MiClaveSegura123"}'
+└── package.json
 ```
